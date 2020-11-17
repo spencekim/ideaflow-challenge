@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     Editor,
     EditorState,
@@ -12,8 +12,8 @@ import 'draft-js/dist/Draft.css';
 import './App.css';
 import { AutocompleteState, KeyBindings } from './types';
 import SuggestionsBox from './components/SuggestionsBox';
-import data from './mockData';
-import { findAutocompleteEntries, getPrefixMatches } from './helpers';
+import { findAutocompleteEntries } from './helpers';
+import { fetchPrefixMatches } from './mock';
 import AutocompleteEntry from './components/AutocompleteEntry';
 
 const App = (): JSX.Element => {
@@ -45,8 +45,7 @@ const App = (): JSX.Element => {
     };
 
     const getAutocompleteState = (
-        editorState: EditorState,
-        data: string[]
+        editorState: EditorState
     ): AutocompleteState => {
         const contentState = editorState.getCurrentContent();
         const selectionState = editorState.getSelection();
@@ -94,7 +93,7 @@ const App = (): JSX.Element => {
             .getText()
             .slice(nearestTriggerIndex + 2, anchorOffset);
 
-        const suggestions = getPrefixMatches(data, compareString);
+        const suggestions = fetchPrefixMatches(compareString);
 
         return {
             triggerOffset: nearestTriggerIndex,
@@ -188,7 +187,7 @@ const App = (): JSX.Element => {
 
     const onChange = (editorState: EditorState) => {
         setEditorState(editorState);
-        setAutocompleteState(getAutocompleteState(editorState, data));
+        setAutocompleteState(getAutocompleteState(editorState));
     };
 
     return (

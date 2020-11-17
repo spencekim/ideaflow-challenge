@@ -1,4 +1,4 @@
-export default [
+const data = [
     'Melissa Miller',
     'Jasmine Simpson',
     'Stacy Sanchez',
@@ -100,3 +100,15 @@ export default [
     'Ryan Norris',
     'Robert Thompson'
 ];
+
+export const fetchPrefixMatches = (compareString: string) => {
+    const matchList = data.filter((str) => {
+        return str.toLowerCase().startsWith(compareString.toLowerCase());
+    });
+
+    if (matchList.length === 0) {
+        return [compareString];
+    }
+
+    return matchList;
+};

@@ -1,4 +1,4 @@
-const data = [
+export default [
     'Melissa Miller',
     'Jasmine Simpson',
     'Stacy Sanchez',
@@ -100,5 +100,3 @@ const data = [
     'Ryan Norris',
     'Robert Thompson'
 ];
-
-export default data;

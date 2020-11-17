@@ -1,5 +1,4 @@
 import { ContentBlock, ContentState, EditorState } from 'draft-js';
-import { AutocompleteState } from './types';
 
 export const findAutocompleteEntries = (
     contentBlock: ContentBlock,

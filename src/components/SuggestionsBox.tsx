@@ -1,5 +1,5 @@
 import React from 'react';
-import { AutocompleteState, TopLeftCoordinate } from '../types';
+import { TopLeftCoordinate } from '../types';
 
 interface SuggestionsBoxProps {
     topLeftCoordinate: TopLeftCoordinate;
@@ -15,22 +15,23 @@ const SuggestionsBox: React.FC<SuggestionsBoxProps> = ({
     createAutocompleteEntity
 }) => {
     return (
-        <ol
+        <div
+            className="suggestions-box"
             style={{
                 position: 'absolute',
-                backgroundColor: 'gainsboro',
-                zIndex: 2,
-                top: topLeftCoordinate.top,
+                top: topLeftCoordinate.top + 4,
                 left: topLeftCoordinate.left
             }}
         >
             {suggestions.map((suggestion, index) => {
                 return (
-                    <li
+                    <div
                         className="suggestion-item"
                         style={{
                             backgroundColor:
-                                index === selectionIndex ? 'grey' : undefined
+                                index === selectionIndex
+                                    ? 'lightblue'
+                                    : undefined
                         }}
                         key={suggestion + index}
                         onMouseDown={(e) => {
@@ -40,10 +41,10 @@ const SuggestionsBox: React.FC<SuggestionsBoxProps> = ({
                         }}
                     >
                         {suggestion}
-                    </li>
+                    </div>
                 );
             })}
-        </ol>
+        </div>
     );
 };
 

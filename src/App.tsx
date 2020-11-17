@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Editor,
     EditorState,
@@ -12,7 +12,7 @@ import 'draft-js/dist/Draft.css';
 import './App.css';
 import { AutocompleteState, KeyBindings } from './types';
 import SuggestionsBox from './components/SuggestionsBox';
-import data from './data';
+import data from './mockData';
 import { findAutocompleteEntries, getPrefixMatches } from './helpers';
 import AutocompleteEntry from './components/AutocompleteEntry';
 
@@ -93,6 +93,7 @@ const App = (): JSX.Element => {
         const compareString = contentBlock
             .getText()
             .slice(nearestTriggerIndex + 2, anchorOffset);
+
         const suggestions = getPrefixMatches(data, compareString);
 
         return {

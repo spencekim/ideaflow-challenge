@@ -8,22 +8,28 @@
     min-height: 80vh;
 }
 
+.suggestions-box {
+    position: absolute;
+    background-color: gainsboro;
+    border: 4px solid gainsboro;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.22);
+    z-index: 2;
+}
+
 .autocomplete-entry {
-    color: darkcyan;
+    color: steelblue;
     font-weight: bold;
     font-style: italic;
 }
 
 .suggestion-item {
-    border: 0.5px solid grey;
     padding: 10;
     position: relative;
     z-index: 3;
-    border: 0.25px solid grey;
 }
 
 .suggestion-item:hover {
     z-index: 4;
-    background-color: lightblue;
+    background-color: lightgrey;
     cursor: pointer;
 }

@@ -5,10 +5,10 @@ import App from './App';
 import * as serviceWorker from './serviceWorker';
 
 ReactDOM.render(
-    // TODO turn off strict mode when optimizing performance
-    <React.StrictMode>
-        <App />
-    </React.StrictMode>,
+    // <React.StrictMode>
+    //     <App />
+    // </React.StrictMode>,
+    <App />,
     document.getElementById('root')
 );
 

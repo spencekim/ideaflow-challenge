@@ -1,4 +1,6 @@
 export type AutocompleteState = {
+    triggerOffset: number;
+    focusOffset: number;
     topLeftCoordinate: TopLeftCoordinate;
     suggestions: string[];
     selectionIndex: number;

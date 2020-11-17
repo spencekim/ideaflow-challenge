@@ -13,7 +13,7 @@ import './App.css';
 import { AutocompleteState, KeyBindings } from './types';
 import SuggestionsBox from './components/SuggestionsBox';
 import data from './data';
-import { findAutocompleteEntries, getPrefixMatches } from './utils';
+import { findAutocompleteEntries, getPrefixMatches } from './helpers';
 import AutocompleteEntry from './components/AutocompleteEntry';
 
 const App = (): JSX.Element => {
@@ -32,109 +32,11 @@ const App = (): JSX.Element => {
         AutocompleteState
     >(null);
 
-    const createAutocompleteEntity = (selectedIndex: number) => {
-        if (autocompleteState) {
-            const selectedSuggestion =
-                autocompleteState.suggestions[selectedIndex];
-
-            const contentState = editorState.getCurrentContent();
-            const contentStateWithEntity = contentState.createEntity(
-                'AUTOCOMPLETE_ENTRY',
-                'IMMUTABLE'
-            );
-            const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
-
-            const selectionState = editorState.getSelection();
-            const blockKey = selectionState.getAnchorKey();
-            const contentBlock = contentState.getBlockForKey(blockKey);
-            const anchorOffset = selectionState.getAnchorOffset();
-            const focusOffset = selectionState.getFocusOffset();
-
-            const preAnchorText = contentBlock.getText().slice(0, anchorOffset);
-            const nearestTriggerIndex = preAnchorText.lastIndexOf(
-                '<>',
-                anchorOffset
-            );
-
-            const selectionToRemove = selectionState.merge({
-                focusOffset,
-                anchorOffset: nearestTriggerIndex
-            });
-
-            const replacedContentState = Modifier.replaceText(
-                contentState,
-                selectionToRemove,
-                selectedSuggestion,
-                editorState.getCurrentInlineStyle(),
-                entityKey
-            );
-
-            const finalEditorState = EditorState.push(
-                editorState,
-                replacedContentState,
-                'insert-characters'
-            );
-
-            setEditorState(finalEditorState);
+    const setSelectionIndex = (newSelectionIndex: number): void => {
+        if (!autocompleteState) {
+            setAutocompleteState(null);
+            return;
         }
-        setAutocompleteState(null);
-    };
-
-    const getKeyBindings = (e: React.KeyboardEvent) => {
-        if (autocompleteState) {
-            switch (e.key) {
-                case 'Enter':
-                    return KeyBindings.ENTER;
-                case 'Tab':
-                    return KeyBindings.TAB;
-                case 'ArrowDown':
-                    return KeyBindings.ARROW_DOWN;
-                case 'ArrowUp':
-                    return KeyBindings.ARROW_UP;
-                default:
-                    return getDefaultKeyBinding(e);
-            }
-        }
-        return getDefaultKeyBinding(e);
-    };
-
-    const handleKeyCommand = (command: string): DraftHandleValue => {
-        switch (command) {
-            case KeyBindings.ENTER:
-                if (autocompleteState) {
-                    createAutocompleteEntity(autocompleteState.selectionIndex);
-                    return 'handled';
-                }
-                return 'not-handled';
-            case KeyBindings.TAB:
-                if (autocompleteState) {
-                    createAutocompleteEntity(autocompleteState.selectionIndex);
-                    return 'handled';
-                }
-                return 'not-handled';
-            case KeyBindings.ARROW_DOWN:
-                if (
-                    autocompleteState &&
-                    autocompleteState.selectionIndex <
-                        autocompleteState.suggestions.length - 1
-                ) {
-                    setSelectionIndex(autocompleteState.selectionIndex + 1);
-                    return 'handled';
-                }
-                return 'not-handled';
-            case KeyBindings.ARROW_UP:
-                if (autocompleteState && autocompleteState.selectionIndex > 0) {
-                    setSelectionIndex(autocompleteState.selectionIndex - 1);
-                    return 'handled';
-                }
-                return 'not-handled';
-            default:
-                return 'not-handled';
-        }
-    };
-
-    const setSelectionIndex = (newSelectionIndex: number) => {
-        if (!autocompleteState) return null;
         const newState = {
             ...autocompleteState,
             selectionIndex: newSelectionIndex
@@ -155,15 +57,14 @@ const App = (): JSX.Element => {
 
         if (anchorOffset !== focusOffset) return null;
 
-        const entity = contentBlock.getEntityAt(anchorOffset);
-        if (entity) return null;
+        if (contentBlock.getEntityAt(anchorOffset)) return null;
 
         const selection = window.getSelection();
-        if (!selection) return null;
-        if (selection.rangeCount === 0) return null;
+        if (!selection || selection.rangeCount === 0) return null;
+        const range = selection.getRangeAt(0).cloneRange();
+        if (range.getClientRects().length === 0) return null;
 
         const preAnchorText = contentBlock.getText().slice(0, anchorOffset);
-
         const nearestTriggerIndex = preAnchorText.lastIndexOf(
             '<>',
             anchorOffset
@@ -179,24 +80,109 @@ const App = (): JSX.Element => {
             if (contentBlock.getEntityAt(i)) return null;
         }
 
-        const range = selection.getRangeAt(0).cloneRange();
-        range.setStart(
-            range.startContainer,
-            nearestTriggerIndex - (anchorOffset - selection.focusOffset)
-        );
-        if (range.getClientRects().length === 0) return null;
+        const boundingRangeStartOffset =
+            nearestTriggerIndex - (anchorOffset - selection.focusOffset);
+
+        if (boundingRangeStartOffset < 0) {
+            return null;
+        }
+
+        range.setStart(range.startContainer, boundingRangeStartOffset);
         const rect = range.getBoundingClientRect();
 
         const compareString = contentBlock
             .getText()
             .slice(nearestTriggerIndex + 2, anchorOffset);
-
         const suggestions = getPrefixMatches(data, compareString);
+
         return {
+            triggerOffset: nearestTriggerIndex,
+            focusOffset,
             selectionIndex: 0,
             suggestions,
             topLeftCoordinate: { top: rect.bottom, left: rect.left }
         };
+    };
+
+    const createAutocompleteEntity = (selectedIndex: number): void => {
+        if (!autocompleteState) {
+            return;
+        }
+        const contentState = editorState.getCurrentContent();
+        const contentStateWithEntity = contentState.createEntity(
+            'AUTOCOMPLETE_ENTRY',
+            'IMMUTABLE'
+        );
+        const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
+        const selectionState = editorState.getSelection();
+
+        const selectionToRemove = selectionState.merge({
+            focusOffset: autocompleteState.focusOffset,
+            anchorOffset: autocompleteState.triggerOffset
+        });
+
+        const selectedSuggestionString =
+            autocompleteState.suggestions[selectedIndex];
+
+        const replacedContentState = Modifier.replaceText(
+            contentState,
+            selectionToRemove,
+            selectedSuggestionString,
+            editorState.getCurrentInlineStyle(),
+            entityKey
+        );
+
+        const nextEditorState = EditorState.push(
+            editorState,
+            replacedContentState,
+            'insert-characters'
+        );
+
+        setEditorState(nextEditorState);
+        setAutocompleteState(null);
+    };
+
+    const getKeyBindings = (e: React.KeyboardEvent) => {
+        if (!autocompleteState) return getDefaultKeyBinding(e);
+        switch (e.key) {
+            case 'Enter':
+                return KeyBindings.ENTER;
+            case 'Tab':
+                return KeyBindings.TAB;
+            case 'ArrowDown':
+                return KeyBindings.ARROW_DOWN;
+            case 'ArrowUp':
+                return KeyBindings.ARROW_UP;
+            default:
+                return getDefaultKeyBinding(e);
+        }
+    };
+
+    const handleKeyCommand = (command: string): DraftHandleValue => {
+        if (!autocompleteState) return 'not-handled';
+        switch (command) {
+            case KeyBindings.ENTER:
+                createAutocompleteEntity(autocompleteState.selectionIndex);
+                return 'handled';
+            case KeyBindings.TAB:
+                createAutocompleteEntity(autocompleteState.selectionIndex);
+                return 'handled';
+            case KeyBindings.ARROW_DOWN:
+                if (
+                    autocompleteState.selectionIndex ===
+                    autocompleteState.suggestions.length - 1
+                )
+                    return 'not-handled';
+                setSelectionIndex(autocompleteState.selectionIndex + 1);
+                return 'handled';
+            case KeyBindings.ARROW_UP:
+                if (!(autocompleteState.selectionIndex > 0))
+                    return 'not-handled';
+                setSelectionIndex(autocompleteState.selectionIndex - 1);
+                return 'handled';
+            default:
+                return 'not-handled';
+        }
     };
 
     const onChange = (editorState: EditorState) => {

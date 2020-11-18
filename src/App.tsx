@@ -206,6 +206,7 @@ const App = (): JSX.Element => {
                 onChange={onChange}
                 keyBindingFn={getKeyBindings}
                 handleKeyCommand={handleKeyCommand}
+                stripPastedStyles={true}
             />
         </>
     );

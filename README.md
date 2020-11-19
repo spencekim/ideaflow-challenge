@@ -13,3 +13,4 @@ Spencer Kim 11/17/20
     - https://stackoverflow.com/questions/51403235/lose-editor-focus-when-try-to-create-nested-list-draft-js
     - https://github.com/facebook/draft-js/blob/master/examples/draft-0-10-0/tweet/tweet.html
     - https://stackoverflow.com/questions/40955840/how-to-handle-key-event-in-draft-js
+    - https://javascript.info/selection-range

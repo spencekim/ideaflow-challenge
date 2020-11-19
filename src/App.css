@@ -29,9 +29,10 @@
 }
 
 .autocomplete-entry {
-    color: steelblue;
+    background-color: lightblue;
     font-weight: bold;
     font-style: italic;
+    display: inline;
 }
 
 .suggestion-item {

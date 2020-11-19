@@ -44,64 +44,80 @@ const App = (): JSX.Element => {
         setAutocompleteState(newState);
     };
 
-    const getAutocompleteState = (
-        editorState: EditorState
-    ): AutocompleteState => {
-        const contentState = editorState.getCurrentContent();
-        const selectionState = editorState.getSelection();
-        const blockKey = selectionState.getAnchorKey();
-        const contentBlock = contentState.getBlockForKey(blockKey);
-        const anchorOffset = selectionState.getAnchorOffset();
-        const focusOffset = selectionState.getFocusOffset();
+    const getAutocompleteState = (editorState: EditorState): void => {
+        setTimeout(() => {
+            const contentState = editorState.getCurrentContent();
+            const selectionState = editorState.getSelection();
+            const blockKey = selectionState.getAnchorKey();
+            const contentBlock = contentState.getBlockForKey(blockKey);
+            const anchorOffset = selectionState.getAnchorOffset();
+            const focusOffset = selectionState.getFocusOffset();
 
-        if (anchorOffset !== focusOffset) return null;
+            const selection = window.getSelection();
 
-        if (contentBlock.getEntityAt(anchorOffset)) return null;
+            if (
+                anchorOffset !== focusOffset ||
+                contentBlock.getEntityAt(anchorOffset) ||
+                !selection ||
+                selection.rangeCount === 0
+            ) {
+                setAutocompleteState(null);
+                return;
+            }
 
-        const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0) return null;
-        const range = selection.getRangeAt(0).cloneRange();
-        if (range.getClientRects().length === 0) return null;
+            const range = selection.getRangeAt(0).cloneRange();
+            if (range.getClientRects().length === 0) {
+                setAutocompleteState(null);
+                return;
+            }
 
-        const preAnchorText = contentBlock.getText().slice(0, anchorOffset);
-        const nearestTriggerIndex = preAnchorText.lastIndexOf(
-            '<>',
-            anchorOffset
-        );
+            const nearestTriggerIndex = contentBlock
+                .getText()
+                .slice(0, anchorOffset)
+                .lastIndexOf('<>', anchorOffset);
+            if (
+                nearestTriggerIndex === -1 ||
+                nearestTriggerIndex === anchorOffset - 2
+            ) {
+                setAutocompleteState(null);
+                return;
+            }
 
-        if (
-            nearestTriggerIndex === -1 ||
-            nearestTriggerIndex === anchorOffset - 2
-        )
-            return null;
+            for (let i = nearestTriggerIndex + 2; i < anchorOffset; i++) {
+                if (contentBlock.getEntityAt(i)) {
+                    setAutocompleteState(null);
+                    return;
+                }
+            }
 
-        for (let i = nearestTriggerIndex + 2; i < anchorOffset; i++) {
-            if (contentBlock.getEntityAt(i)) return null;
-        }
+            const boundingRangeStartOffset =
+                nearestTriggerIndex - (anchorOffset - selection.focusOffset);
 
-        const boundingRangeStartOffset =
-            nearestTriggerIndex - (anchorOffset - selection.focusOffset);
+            if (boundingRangeStartOffset < 0) {
+                {
+                    setAutocompleteState(null);
+                    return;
+                }
+            }
 
-        if (boundingRangeStartOffset < 0) {
-            return null;
-        }
+            range.setStart(range.startContainer, boundingRangeStartOffset);
+            const rect = range.getBoundingClientRect();
 
-        range.setStart(range.startContainer, boundingRangeStartOffset);
-        const rect = range.getBoundingClientRect();
+            const suggestions = fetchPrefixMatches(
+                contentBlock
+                    .getText()
+                    .slice(nearestTriggerIndex + 2, anchorOffset)
+            );
 
-        const compareString = contentBlock
-            .getText()
-            .slice(nearestTriggerIndex + 2, anchorOffset);
-
-        const suggestions = fetchPrefixMatches(compareString);
-
-        return {
-            triggerOffset: nearestTriggerIndex,
-            focusOffset,
-            selectionIndex: 0,
-            suggestions,
-            topLeftCoordinate: { top: rect.bottom, left: rect.left }
-        };
+            setAutocompleteState({
+                triggerOffset: nearestTriggerIndex,
+                focusOffset,
+                selectionIndex: 0,
+                suggestions,
+                topLeftCoordinate: { top: rect.bottom, left: rect.left }
+            });
+            return;
+        }, 0);
     };
 
     const createAutocompleteEntity = (selectedIndex: number): void => {
@@ -187,7 +203,7 @@ const App = (): JSX.Element => {
 
     const onChange = (editorState: EditorState) => {
         setEditorState(editorState);
-        setAutocompleteState(getAutocompleteState(editorState));
+        getAutocompleteState(editorState);
     };
 
     return (

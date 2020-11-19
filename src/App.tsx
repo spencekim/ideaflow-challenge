@@ -94,10 +94,8 @@ const App = (): JSX.Element => {
                 nearestTriggerIndex - (anchorOffset - selection.focusOffset);
 
             if (boundingRangeStartOffset < 0) {
-                {
-                    setAutocompleteState(null);
-                    return;
-                }
+                setAutocompleteState(null);
+                return;
             }
 
             range.setStart(range.startContainer, boundingRangeStartOffset);
